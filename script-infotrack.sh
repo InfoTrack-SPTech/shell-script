@@ -1,33 +1,27 @@
 #!/bin/bash
 
-# Criar arquivo LEIAME.TXT
-touch LEIAME.TXT
+sudo apt update && sudo apt upgrade –y
 
-# Criar diretório e script de instalação
-mkdir script_instalacao
-cd script_instalacao
-touch instalacao.sh
+sudo apt install docker.io
 
-# Tornar o script de instalação executável
-chmod +x instalacao.sh
-
-# Executar o script de instalação
-./instalacao.sh
-
-# Script de instalação
+# Inicia e habilita o Docker
+sudo systemctl start docker
+sudo systemctl enable docker
 
 # Verifica se o Java está instalado
-java -version
-if [ $? -eq 0 ]; then
-  echo "Java instalado"
-else
-  echo "Java não instalado"
-  echo "Gostaria de instalar o Java? [s/n]"
-  read get
-  if [ "$get" == "s" ]; then
-    sudo apt install openjdk-17-jre -y
-  fi
-fi
+java -version #verifica versao atual do java
+if [ $? = 0 ]; #se retorno for igual a 0
+then #entao,
+echo “java instalado” #print no terminal
+else #se nao,
+echo “java não instalado” #print no terminal
+echo “gostaria de instalar o java? [s/n]” #print no terminal
+read get #variável que guarda resposta do usuário
+if [ \“$get\” == \“s\” ]; #se retorno for igual a s
+then #entao
+sudo apt install openjdk-17-jre -y #executa instalacao do java
+fi #fecha o 2º if
+fi #fecha o 1º if
 
 # Verifica se o MySQL está instalado
 mysql --version
@@ -42,69 +36,43 @@ else
   fi
 fi
 
-# Configuração do Docker para MySQL
-NOME_CONTAINER="ContainerBD"
-NOME_DATABASE="InfoTrack"
-SENHA_MYSQL="root_password"  # Defina uma senha real aqui
-DIRETORIO_SQL="caminho_para_sql"  # Diretório dos scripts SQL aqui
-
-# Verifica se o Docker está instalado
-docker --version
-if [ $? -eq 0 ]; then
-  echo "Docker instalado"
-else
-  echo "Docker não instalado"
-  echo "Gostaria de instalar o Docker? [s/n]"
-  read get
-  if [ "$get" == "s" ]; then
-    sudo apt install docker.io -y
-  fi
-fi
-
-# Inicia e habilita o Docker
-sudo systemctl start docker
-sudo systemctl enable docker
 
 # Baixar a imagem MySQL
 sudo docker pull mysql:5.7
 
-# Executa o container MySQL
-sudo docker run -d -p 3306:3306 --name $NOME_CONTAINER -e MYSQL_DATABASE=$NOME_DATABASE -e MYSQL_ROOT_PASSWORD=$SENHA_MYSQL mysql:5.7
+# Configuração do Docker para MySQL
+NOME_CONTAINER="ContainerBD"
+NOME_DATABASE="InfoTrack"
+SENHA_MYSQL="123"
 
-# Acessa o container MySQL
-sudo docker exec -it $NOME_CONTAINER bash
-mysql -u root -p
+# Executa o container MySQL com as variáveis de ambiente necessárias
+echo "Executando o container MySQL..."
+sudo docker run -d -p 3306:3306 --name $NOME_CONTAINER -e "MYSQL_DATABASE=$NOME_DATABASE" -e "MYSQL_ROOT_PASSWORD=$SENHA_MYSQL" mysql:5.7
 
-# Dockerfile para MySQL
-cat <<EOF > Dockerfile
-FROM mysql:latest
-ENV MYSQL_ROOT_PASSWORD=$SENHA_MYSQL
-COPY ./$DIRETORIO_SQL/ /docker-entrypoint-initdb.d/
-EXPOSE 3306
-EOF
-
-# Build da imagem MySQL personalizada
-sudo docker build -t minha-image-banco .
-
-# Executa o container com a imagem personalizada
-sudo docker run -d --name $NOME_CONTAINER -p 3306:3306 minha-image-banco
-
-# Configuração do Docker para o site Node.js
-NOME_CONTAINER="ContainerSite"
+# Criar diretório para arquivos Node.js
+ARQUIVOS_NODE_DIR="../arquivos_node/Site-Institucional"
+mkdir -p "$ARQUIVOS_NODE_DIR"
+cd "$ARQUIVOS_NODE_DIR" 
 
 # Dockerfile para o site Node.js
-cat <<EOF > Dockerfile-Node
+echo "Criando o Dockerfile para o site Node.js"
+cat <<EOF > Dockerfile
 FROM node:latest
-WORKDIR /usr/src/app
+RUN apt-get update && apt-get install -y git
+WORKDIR /arquivos_node
 RUN git clone https://github.com/InfoTrack-SPTech/Site-Institucional.git
-WORKDIR /usr/src/app/Site-Institucional
+WORKDIR /arquivos_node/Site-Institucional
 RUN npm install
 EXPOSE 80
 CMD ["npm", "start"]
 EOF
 
 # Build da imagem Node.js
-sudo docker build -f Dockerfile-Node -t imagem-node:v1 .
+echo "Construindo a imagem Node.js"
+sudo docker build -t node-site .
 
 # Executa o container Node.js
-sudo docker run -d --name $NOME_CONTAINER -p 80:80 imagem-node:v1
+echo "Executando o container Node.js"
+sudo docker run -d --name ContainerSite -p 80:80 node-site
+
+echo "Setup concluído com sucesso"
