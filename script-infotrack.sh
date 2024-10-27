@@ -1,9 +1,10 @@
 #!/bin/bash
 
 sudo apt update && sudo apt upgrade –y
-
 sudo apt install docker.io
-
+echo "******************************************"
+echo “Inicializando e habilitando o Docker”
+echo "******************************************"
 # Inicia e habilita o Docker
 sudo systemctl start docker
 sudo systemctl enable docker
@@ -12,21 +13,24 @@ sudo systemctl enable docker
 java -version #verifica versao atual do java
 if [ $? = 0 ]; #se retorno for igual a 0
 then #entao,
-echo “java instalado” #print no terminal
+  echo "******************************************"
+  echo “java instalado” 
+  echo "******************************************"
 else #se nao,
-echo “java não instalado” #print no terminal
-echo “gostaria de instalar o java? [s/n]” #print no terminal
-read get #variável que guarda resposta do usuário
-if [ \“$get\” == \“s\” ]; #se retorno for igual a s
-then #entao
-sudo apt install openjdk-17-jre -y #executa instalacao do java
-fi #fecha o 2º if
-fi #fecha o 1º if
+  echo “java não instalado” 
+  echo “gostaria de instalar o java? [s/n]” 
+  read get #variável que guarda resposta do usuário
+  if [ \“$get\” == \“s\” ]; then
+    sudo apt install openjdk-17-jre -y #executa instalacao do java
+  fi 
+fi 
 
 # Verifica se o MySQL está instalado
 mysql --version
 if [ $? -eq 0 ]; then
+  echo "******************************************"
   echo "MySQL instalado"
+  echo "******************************************"
 else
   echo "MySQL não instalado"
   echo "Gostaria de instalar o MySQL? [s/n]"
@@ -46,7 +50,9 @@ NOME_DATABASE="InfoTrack"
 SENHA_MYSQL="123"
 
 # Executa o container MySQL com as variáveis de ambiente necessárias
-echo "Executando o container MySQL..."
+echo "******************************************"
+echo "Executando o container MySQL"
+echo "******************************************"
 sudo docker run -d -p 3306:3306 --name $NOME_CONTAINER -e "MYSQL_DATABASE=$NOME_DATABASE" -e "MYSQL_ROOT_PASSWORD=$SENHA_MYSQL" mysql:5.7
 
 # Criar diretório para arquivos Node.js
@@ -55,7 +61,10 @@ mkdir -p "$ARQUIVOS_NODE_DIR"
 cd "$ARQUIVOS_NODE_DIR" 
 
 # Dockerfile para o site Node.js
+echo "******************************************"
 echo "Criando o Dockerfile para o site Node.js"
+echo "******************************************"
+
 cat <<EOF > Dockerfile
 FROM node:latest
 RUN apt-get update && apt-get install -y git
@@ -64,15 +73,30 @@ RUN git clone https://github.com/InfoTrack-SPTech/Site-Institucional.git
 WORKDIR /arquivos_node/Site-Institucional
 RUN npm install
 EXPOSE 80
-CMD ["npm", "start"]
+CMD ["tail", "-f", "/dev/null"]
 EOF
 
 # Build da imagem Node.js
+echo "******************************************"
 echo "Construindo a imagem Node.js"
+echo "******************************************"
 sudo docker build -t node-site .
 
 # Executa o container Node.js
+echo "******************************************"
 echo "Executando o container Node.js"
+echo "******************************************"
 sudo docker run -d --name ContainerSite -p 80:80 node-site
 
+echo "******************************************"
 echo "Setup concluído com sucesso"
+echo "******************************************"
+
+echo "******************************************"
+echo "Listando os containers Docker"
+echo "******************************************"
+sudo docker ps -a
+echo "******************************************"
+echo "Executando o Docker do Site"
+echo "******************************************"
+sudo docker exec -it ContainerSite bash
