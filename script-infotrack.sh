@@ -21,7 +21,7 @@ else #se nao,
   echo “gostaria de instalar o java? [s/n]” 
   read get #variável que guarda resposta do usuário
   if [ \“$get\” == \“s\” ]; then
-    sudo apt install openjdk-17-jre -y #executa instalacao do java
+    sudo apt install openjdk-21-jre -y #executa instalacao do java
   fi 
 fi 
 
