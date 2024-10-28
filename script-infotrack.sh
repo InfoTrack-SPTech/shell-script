@@ -1,29 +1,30 @@
 #!/bin/bash
 
-sudo apt update && sudo apt upgrade –y
-sudo apt install docker.io
+# Atualiza e instala pacotes necessários
+sudo apt update && sudo apt upgrade -y
+sudo apt install docker.io -y
+
 echo "******************************************"
-echo “Inicializando e habilitando o Docker”
+echo "Inicializando e habilitando o Docker"
 echo "******************************************"
 # Inicia e habilita o Docker
 sudo systemctl start docker
 sudo systemctl enable docker
 
 # Verifica se o Java está instalado
-java -version #verifica versao atual do java
-if [ $? = 0 ]; #se retorno for igual a 0
-then #entao,
+java -version
+if [ $? -eq 0 ]; then
   echo "******************************************"
-  echo “java instalado” 
+  echo "Java instalado"
   echo "******************************************"
-else #se nao,
-  echo “java não instalado” 
-  echo “gostaria de instalar o java? [s/n]” 
-  read get #variável que guarda resposta do usuário
-  if [ \“$get\” == \“s\” ]; then
-    sudo apt install openjdk-21-jre -y #executa instalacao do java
-  fi 
-fi 
+else
+  echo "Java não instalado"
+  echo "Gostaria de instalar o Java? [s/n]"
+  read get
+  if [ "$get" = "s" ]; then
+    sudo apt install openjdk-21-jre -y
+  fi
+fi
 
 # Verifica se o MySQL está instalado
 mysql --version
@@ -35,11 +36,10 @@ else
   echo "MySQL não instalado"
   echo "Gostaria de instalar o MySQL? [s/n]"
   read get
-  if [ "$get" == "s" ]; then
+  if [ "$get" = "s" ]; then
     sudo apt install mysql-server -y
   fi
 fi
-
 
 # Baixar a imagem MySQL
 sudo docker pull mysql:5.7
@@ -47,18 +47,33 @@ sudo docker pull mysql:5.7
 # Configuração do Docker para MySQL
 NOME_CONTAINER="ContainerBD"
 NOME_DATABASE="InfoTrack"
-SENHA_MYSQL="123"
+SENHA_MYSQL="12345"
+
+
+sudo systemctl stop mysql
 
 # Executa o container MySQL com as variáveis de ambiente necessárias
 echo "******************************************"
 echo "Executando o container MySQL"
 echo "******************************************"
-sudo docker run -d -p 3306:3306 --name $NOME_CONTAINER -e "MYSQL_DATABASE=$NOME_DATABASE" -e "MYSQL_ROOT_PASSWORD=$SENHA_MYSQL" mysql:5.7
+sudo docker run -d -p 3306:3306 --name $NOME_CONTAINER -e MYSQL_DATABASE=$NOME_DATABASE -e MYSQL_ROOT_PASSWORD=$SENHA_MYSQL mysql:5.7
+
+# Executa o script SQL dentro do container
+#echo "******************************************"
+#echo "Copiando o arquivo SQL para o container"
+#echo "******************************************"
+#sudo docker exec "$NOME_CONTAINER" mkdir -p /tmp/tabelas
+#sudo docker cp "$SCRIPT_SQL" "$NOME_CONTAINER":/tmp/
+
+#echo "******************************************"
+#echo "Executando o script SQL dentro do container"
+#echo "******************************************"
+#docker exec -i "$NOME_CONTAINER" mysql -u root -p"$SENHA_MYSQL" "$NOME_DATABASE" < /tmp/"$SCRIPT_SQL"
 
 # Criar diretório para arquivos Node.js
 ARQUIVOS_NODE_DIR="../arquivos_node/Site-Institucional"
 mkdir -p "$ARQUIVOS_NODE_DIR"
-cd "$ARQUIVOS_NODE_DIR" 
+cd "$ARQUIVOS_NODE_DIR"
 
 # Dockerfile para o site Node.js
 echo "******************************************"
@@ -86,7 +101,7 @@ sudo docker build -t node-site .
 echo "******************************************"
 echo "Executando o container Node.js"
 echo "******************************************"
-sudo docker run -d --name ContainerSite -p 80:80 node-site
+sudo docker run -d --name ContainerSite -p 8080:80 node-site
 
 echo "******************************************"
 echo "Setup concluído com sucesso"
@@ -96,7 +111,3 @@ echo "******************************************"
 echo "Listando os containers Docker"
 echo "******************************************"
 sudo docker ps -a
-echo "******************************************"
-echo "Executando o Docker do Site"
-echo "******************************************"
-sudo docker exec -it ContainerSite bash
